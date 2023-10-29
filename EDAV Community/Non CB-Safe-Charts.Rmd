@@ -1,0 +1,78 @@
+---
+title: "Community Contribution: Vedant Goyal and Kanisha Shah"
+subtitle: "Non Color-blind Friendly Charts"
+output: html_document
+
+---
+
+```{r dataset, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(ggridges)
+library(openintro)
+```
+
+```{r Spotify danceability vs energy}
+
+spotify <- read.csv("spotify-2023.csv")
+plot2 <- filter(spotify, energy_./danceability_. > 0.5 & energy_./danceability_. <1.5 & bpm > 100)
+plot2 <- plot2 %>% group_by(released_year, artist_count) %>% summarise(e = mean(energy_.), d = mean(danceability_.), bpm = mean(bpm))
+
+ggplot(plot2, aes(x = e, y = d, colour = factor(artist_count), size= bpm)) +
+  geom_point(alpha = 0.8, na.rm = TRUE) +
+  labs(title = "Danceability VS Song Energy of the top streamed songs on Spotify", x = "Song Energy", y = "Danceability", colour = "No. of Artists", size = "Beats/min")
+
+```
+
+```{r Amazon top-50 books}
+
+books <- read.csv("amazon-top-50.csv")
+plot1 <- books %>% group_by(Year,Genre) %>% summarise(Average_price = mean(Price))
+plot1 <- filter(plot1, Year > 2009)
+ggplot(plot1, aes(y = Average_price, x = Genre, fill = factor(Year))) +
+  geom_col(position = position_dodge()) +
+  labs(title = "Average Price for the Top-50 Selling Books on Amazon in the past decade", x = "Book Genre", y = "Average Price", fill = "Years")
+
+```
+
+```{r Spotify Acousticness vs Keys}
+
+plot3 <- spotify %>% drop_na(key)
+plot3 <- filter(plot3, key != "")
+ggplot(plot3, aes(x=key, y=acousticness_., fill=mode)) +
+  geom_boxplot() +
+  facet_wrap(~key, scale="free") +
+  labs(title = "Variation of the acousticness based on keys of top streamed songs on spotify", x = "Keys", y = "Acousticness", fill = "Key mode")
+```
+
+
+```{r Airplane speeds}
+
+sp_tod <- birds %>% filter(!is.na(speed) & !is.na(time_of_day))
+ggplot(data=sp_tod, mapping=aes(x=speed, y=time_of_day, fill = time_of_day, na.rm=TRUE)) +
+  geom_density_ridges() +
+  labs(title="Distribution of speeds at various times of day of the airplanes", x = "Speed", y = "Time of the day", fill = "")
+```
+
+
+
+```{r Salary vs Years of experience}
+salary <- read.csv("Salary Data.csv")
+salary <- filter(salary, Years.of.Experience >= 10 & Years.of.Experience <= 21)
+salary$transformedSalary=salary$Salary/1000
+ggplot(salary, aes(x = Years.of.Experience, y = transformedSalary, fill = Education.Level)) +
+  geom_area() +
+  labs(title = "Variation in the salary of people with years of experience", x = "Years of Experience", y ="Salary (thousands of $)", fill = "Education Level")
+
+```
+
+
+```{r Resting BP with Age}
+
+heart = read.csv("heart.csv")
+heart <- heart %>% mutate(sex = if_else(sex == 0, "Female", "Male"))
+ggplot(heart, aes(x = age, y = trtbps, colour = factor(sex))) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Variation in resting BP of people with age", x = "Age", y ="Resting BP", colour = "Gender")
+```

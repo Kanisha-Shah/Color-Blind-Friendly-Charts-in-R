@@ -1,0 +1,123 @@
+---
+title: "Community Contribution: Vedant Goyal and Kanisha Shah"
+subtitle: "Color-blind Friendly Charts"
+output: html_document
+---
+
+
+```{r imports 1, include=FALSE}
+library(tidyquant)
+library(tidyverse)
+options(warn=-1)
+library(ggplot2)
+library(dplyr)
+library(ggridges)
+library(openintro)
+```
+
+### Ways to make our charts color-blind friendly
+
+#### 1. Okabe-Ito Color Palette
+
+The Okabe-Ito color palette was proposed by Okabe and Ito (2008) as a qualitative color palette that is accessible to people with a variety of forms of color vision deficiency.
+
+Resource: https://easystats.github.io/see/reference/scale_color_okabeito.html
+
+```{r Spotify CBFriendly danceability vs energy}
+library(ggokabeito)
+
+spotify <- read.csv("spotify-2023.csv")
+plot2 <- filter(spotify, energy_./danceability_. > 0.5 & energy_./danceability_. <1.5 & bpm > 100)
+plot2 <- plot2 %>% group_by(released_year, artist_count) %>% summarise(e = mean(energy_.), d = mean(danceability_.), bpm = mean(bpm))
+
+ggplot(plot2, aes(x = e, y = d, colour = factor(artist_count), size= bpm)) +
+  geom_point(alpha = 0.8, na.rm = TRUE) +
+  labs(title = "Danceability VS Song Energy of the top streamed songs on Spotify", x = "Song Energy", y = "Danceability", colour = "No. of Artists", size = "Beats/min") +
+  scale_color_okabe_ito()
+
+```
+
+#### 2. Custom Palette designed by Martin Krzywinski
+
+Reference: http://mkweb.bcgsc.ca/colorblind/index.mhtml#projecthome
+
+
+```{r CBFriendly Amazon top-50 books}
+
+colorBlindFriendly <- c("#004949","#009292","#ff6db6","#ffb6db",
+ "#490092","#006ddb","#b66dff","#6db6ff","#b6dbff",
+ "#920000","#924900","#db6d00","#24ff24","#ffff6d")
+
+books <- read.csv("amazon-top-50.csv")
+plot1 <- books %>% group_by(Year,Genre) %>% summarise(Average_price = mean(Price))
+plot1 <- filter(plot1, Year > 2009)
+ggplot(plot1, aes(y = Average_price, x = Genre, fill = factor(Year))) +
+  geom_col(position = position_dodge()) +
+  labs(title = "Average Price for the Top-50 Selling Books on Amazon in the past decade", x = "Book Genre", y = "Average Price", fill = "Years") +
+  scale_fill_manual(values = colorBlindFriendly)
+
+```
+
+#### 3. RColorBrewer (Dark2)
+
+The RColorBrewer package has a range of different color palettes, we may use the parameter colorblindFriendly to see what all palettes are Color Blind Safe. 'Dark2' happens to be one such palette.
+
+
+```{r CBFriendly Spotify Acousticness vs Keys}
+
+library(RColorBrewer)
+plot3 <- spotify %>% drop_na(key)
+plot3 <- filter(plot3, key != "")
+ggplot(plot3, aes(x=key, y=acousticness_., fill=mode)) +
+  geom_boxplot() +
+  facet_wrap(~key, scale="free") +
+  labs(title = "Variation of the acousticness based on keys of top streamed songs on spotify", x = "Keys", y = "Acousticness", fill = "Key mode") +
+  scale_fill_brewer(palette = "Dark2")
+```
+
+#### 4. Viridis 
+
+The viridis package contains a set of beautiful color scales that are each designed to span as wide a palette as possible, making it easier to see differences in your data. These scales are also designed to be perceptually uniform, printable in grey scale, and easier to read by those with colorblindness.
+
+```{r CBFriendly Airplane speeds}
+
+sp_tod <- birds %>% filter(!is.na(speed) & !is.na(time_of_day))
+ggplot(data=sp_tod, mapping=aes(x=speed, y=time_of_day, fill = time_of_day, na.rm=TRUE)) +
+  geom_density_ridges() +
+  labs(title="Distribution of speeds at various times of day of the airplanes", x = "Speed", y = "Time of the day", fill = "") +
+  scale_fill_viridis_d()
+```
+
+#### 5. RColorBrewer (Set2)
+
+
+```{r CBFriendly Salary vs Years of experience}
+
+library(RColorBrewer)
+salary <- read.csv("Salary Data.csv")
+salary <- filter(salary, Years.of.Experience >= 10 & Years.of.Experience <= 21)
+salary$transformedSalary=salary$Salary/1000
+ggplot(salary, aes(x = Years.of.Experience, y = transformedSalary, fill = Education.Level)) +
+  geom_area() +
+  labs(title = "Variation in the salary of people with years of experience", x = "Years of Experience", y ="Salary (thousands of $)", fill = "Education Level") +
+  scale_fill_brewer(palette = "Set2")
+
+```
+
+#### 6. IBM Design Language
+
+Resource: https://www.ibm.com/design/language/color/
+
+
+```{r CBFriendly Resting BP with Age}
+
+# Colors from IBM Design Color Palette
+ibmcolors <- c("#785ef0", "#dc267f")
+
+heart = read.csv("heart.csv")
+heart <- heart %>% mutate(sex = if_else(sex == 0, "Female", "Male"))
+ggplot(heart, aes(x = age, y = trtbps, colour = factor(sex))) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Variation in resting BP of people with age", x = "Age", y ="Resting BP", colour = "Gender") +
+  scale_colour_manual(values = ibmcolors)
+```
